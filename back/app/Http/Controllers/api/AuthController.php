@@ -7,15 +7,20 @@ use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    /**
-     * 
-     */
     public function login(Request $request)
     {
-        return response()->json([
-            'name' => 'Abigail',
-            'state' => 'CA',
+        // $request->validate();
+        $credentials = request(['email', 'password']);
+
+        if (! $token = auth()->attempt($credentials)) {
+            return jsonResponse(status:401, message: 'Unauthorized');
+        }
+
+        return jsonResponse(data: [
+            'token' => $token,
+            'expires_in'=> auth()->factory()->getTTL() * 60
         ]);
+
     }
 
     /**
@@ -23,10 +28,11 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        return response()->json([
-            'name' => 'Assbigail',
-            'state' => 'CssA',
-        ]);
+        auth()->logout();
+        return jsonResponse(
+            message: 'Successfully logged out',
+            status: 200
+        );
     }
 
   

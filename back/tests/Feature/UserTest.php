@@ -7,25 +7,30 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
 use Carbon\Carbon;
+use Database\Seeders\DatabaseSeeder;
 
 class UserTest extends TestCase
 {
-    use  RefreshDatabase;
-    /**
-     * A basic feature test example.
-     */
+    use RefreshDatabase;
+
+    protected function setUp():void {
+        parent::setUp();
+        $this->seed(DatabaseSeeder::class);
+    }
+    
     public function test_get_users_list(): void
     {
         $user = User::factory()->create();
+        $this->actingAs($user);
 
         $response = $this->getJson('/api/users');
         $response->assertOk();
-        $response->assertJSon([$user->toArray()]);
+        $response->assertJsonStructure(['data']);
     }
 
 
     public function test_user_can_add_an_user(){
-        
+        // $this->withoutExceptionHandling();
         $user = User::factory()->create();
         $this->actingAs($user);
 
@@ -34,33 +39,37 @@ class UserTest extends TestCase
                 "first_name"    => "Luis",
                 "last_name"     => "Moreno",
                 "email"         => "mr_luis232@hotmail.com",
-                'password' =>  bcrypt('pass23'),
+                'password'      => "pass23",
                 "phone_number"  => "1234567890",
         ]);
 
         $response->assertCreated();
         //  Endpoint Works
-        $response->assertJsonFragment([
-            "id" => 2,
+        $this->assertDatabaseHas('users', [
+            "first_name"    => "Luis",
+            "last_name"     => "Moreno",
+            "email"         => "mr_luis232@hotmail.com",
+            "phone_number"  => "1234567890",
         ]);
 
 
         // Errors
         // Null values
         $response = $this->postJson('api/user/new', [
-            "first_name"    => '',
-            "last_name"     => '',
-            "email"         => '',
-            'password'      => '',
-            "phone_number"  => '',
+            "first_name"    => "",
+            "last_name"     => "",
+            "email"         => "",
+            "phone_number"  => "",
+            'password'      => "",
         ]);
-        $response->assertInvalid([
-            'first_name',
-            'last_name', 
-            'email',
-            'password',
-            'phone_number',
+        $response->assertStatus(422);
+        $response->assertJsonStructure([
+            'message',
+            'data',
+            'status',
+            'errors' => ['first_name', 'last_name', 'email', 'password']
         ]);
+
         //  Invalid Email 
         $response = $this->postJson('api/user/new', [
             "first_name"    => 'Luis',
@@ -69,8 +78,12 @@ class UserTest extends TestCase
             'password'      => '2324',
             "phone_number"  => '12344567890',
         ]);
-        $response->assertInvalid([
-            'email',
+        $response->assertStatus(422);
+        $response->assertJsonStructure([
+            'message',
+            'data',
+            'status',
+            'errors' => ['email']
         ]);
 
         //  Invalid Phone 
@@ -81,7 +94,13 @@ class UserTest extends TestCase
             'password'      => '2324',
             "phone_number"  => 'asdfg',
         ]);
-        $response->assertInternalServerError();
+        $response->assertStatus(422);
+        $response->assertJsonStructure([
+            'message',
+            'data',
+            'status',
+            'errors' => ['phone_number']
+        ]);
         //  Invalid Phone 
         $response = $this->postJson('api/user/new', [
             "first_name"    => 'Luis',
@@ -90,10 +109,15 @@ class UserTest extends TestCase
             'password'      => '2324',
             "phone_number"  => '112345678901234',
         ]);
-        $response->assertInternalServerError();
+        $response->assertStatus(422);
+        $response->assertJsonStructure([
+            'message',
+            'data',
+            'status',
+            'errors' => ['phone_number']
+        ]);
     }
     public function test_user_can_update_an_user(){
-        
         $user = User::factory()->create();
         $this->actingAs($user);
 
@@ -170,9 +194,27 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
+        // User exist
         $response = $this->deleteJson('api/user/1');
+        $response->assertSuccessful();
 
+        // User doesnt exist
+        $response = $this->deleteJson('api/user/199999');
+        $response->assertInternalServerError();
 
+    }
+    
+    public function test_user_can_get_an_user(){
+        
+        $user = User::factory()->create();
+        $this->actingAs($user);
 
+        // User exist
+        $response = $this->getJson('api/user/1');
+        $response->assertSuccessful();
+
+        // User doesnt exist
+        $response = $this->getJson('api/user/199999');
+        $response->assertInternalServerError();
     }
 }

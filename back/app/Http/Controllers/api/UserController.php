@@ -15,24 +15,27 @@ class UserController extends Controller
      */
     public function index()
     {
-        return response()->json(User::all());
+        return jsonResponse(
+            status: 200,
+            data: User::all()
+        );
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request)
+    public function store(Request $request)
     {
-        DB::beginTransaction();
-        try {
-            $validated = $request->validate([
-                'email' => 'required|email:rfc,dns|unique:users',
-                'password' => 'required',
-                'first_name' => 'required|max:100',
-                'last_name' => 'required|max:100',
-                'phone_number' => 'required|min:10|max:10|digits_between:10,10',
-            ]);
-                
+        $request->validate([
+        'email'         => 'required|email:rfc,dns|unique:users',
+        'password'      => 'required',
+        'first_name'    => 'required|max:100',
+        'last_name'     => 'required|max:100',
+        'phone_number'  => 'required|min:10|max:10|digits_between:10,10',
+        ]);
+
+        try { 
+            DB::beginTransaction();
             $user = User::create([
                 'email' => $request->email,
                 'password' =>  bcrypt($request->password),
@@ -44,15 +47,13 @@ class UserController extends Controller
             DB::commit();
             $user->save();
             
-            return response()->json([$user], 201);
+            return jsonResponse(data: $user, status: 201);
         } catch (\Exception $e) {
             DB::rollback();
-            $content = array(
-                'success' => false,
-                'message' => 'There was an error while processing your request: ' .
-                    $e->getMessage()
+            return jsonResponse(
+                status: 500,
+                message: 'There was an error while processing your request: ' . $e->getMessage(),
             );
-            return response($content)->setStatusCode(500);
         }
     }
 
@@ -61,10 +62,25 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        return response()->json([
-            'name' => 'Abigail',
-            'state' => 'CA',
-        ]);
+        try {
+            $user = User::find($id);
+            if($user){
+                return jsonResponse(
+                    status: 200,
+                    data: $user
+                );
+            }else{
+                return jsonResponse(
+                    status: 500,
+                    message: 'There was an error while processing your request: User not found.'
+                );
+            }
+        } catch (\Exception $e) {
+            return jsonResponse(
+                status: 500,
+                message: 'There was an error while processing your request: ' . $e->getMessage()
+            );
+        }
     }
 
     /**
@@ -86,15 +102,17 @@ class UserController extends Controller
                 ->update($request->toArray());
 
             DB::commit();
-            return response()->json([User::find($id)], 201);
+            return jsonResponse(
+                status: 200,
+                data: User::find($id)
+            );
         } catch (\Exception $e) {
             DB::rollback();
-            $content = array(
-                'success' => false,
-                'message' => 'There was an error while processing your request: ' .
-                    $e->getMessage()
+            
+            return jsonResponse(
+                status: 500,
+                message: 'There was an error while processing your request: ' . $e->getMessage()
             );
-            return response($content)->setStatusCode(500);
         }
     }
 
@@ -110,22 +128,24 @@ class UserController extends Controller
             if($user){
                 $user->delete();
                 DB::commit();
-                return response()->json([User::find($id)], 201);
+                return jsonResponse(
+                    status: 200,
+                    message: 'User deleted succesfully.'
+                );
             }else{
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not found.'
-                ], 404);
+                DB::rollback();
+                return jsonResponse(
+                    status: 500,
+                    message: 'There was an error while processing your request: User not found.'
+                );
             }
         } catch (\Exception $e) {
             DB::rollback();
-            $content = array(
-                'success' => false,
-                'message' => 'There was an error while processing your request: ' .
-                    $e->getMessage()
+            return jsonResponse(
+                status: 500,
+                message: 'There was an error while processing your request: ' . $e->getMessage()
             );
-            return response($content)->setStatusCode(500);
         }
     }
 }

@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Tymon\JWTAuth\Providers\Auth\Illuminate;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,5 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function(\Illuminate\Validation\ValidationException  $th){
+            return jsonResponse(
+                message: $th->getMessage(),
+                status: 422,
+                errors: $th->errors()
+            );
+        });
     })->create();
