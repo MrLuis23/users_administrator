@@ -9,17 +9,22 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // $request->validate();
-        $credentials = request(['email', 'password']);
+        $payload    =   auth()->payload();
 
-        if (! $token = auth()->attempt($credentials)) {
-            return jsonResponse(status:401, message: 'Unauthorized');
+        $credentials = request(['email', 'password']);
+        try {
+            if (! $token = auth()->attempt($credentials))
+                return jsonResponse(status:401, message: 'Unauthorized');
+            
+            return jsonResponse(data: [
+                'token'         => $token,
+                'expires_in'    => auth()->factory()->getTTL() * 60
+            ]);
+            
+        } catch (\Throwable $th) {
+            return jsonResponse(status:500, message: 'Internal Server Error');
         }
 
-        return jsonResponse(data: [
-            'token' => $token,
-            'expires_in'=> auth()->factory()->getTTL() * 60
-        ]);
 
     }
 

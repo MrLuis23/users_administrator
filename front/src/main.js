@@ -18,6 +18,7 @@ import DashboardVue from './components/Dashboard/Index.vue';
 
 // Composables
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 // Utils
 import AuthService from "./services/AuthService";
 
@@ -48,13 +49,16 @@ const router = createRouter({
 function checkAuth(to, from, next) 
 {   
     if (AuthService.isAuthenticated()) next();
-    else console.log('qwerty');
-    // next("/");
+    else{
+        console.log('ASDF')
+        next("/");
+    }
+        
 }
+
 const app = createApp(App)
+app.use(createPinia())
 app.use(router)
-
-
 registerPlugins(app)
 
 app.mount('#app')

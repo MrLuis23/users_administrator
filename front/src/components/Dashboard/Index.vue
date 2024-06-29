@@ -10,4 +10,5 @@
         </v-layout>
     </v-card>
 </template>
-<script setup></script>
+<script setup>
+</script>

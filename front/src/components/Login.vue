@@ -61,14 +61,18 @@
     import AuthService from "../services/AuthService";
     import setAuthHeaders from "../utils/setAuthHeaders";
     import { reactive, ref } from 'vue';
-    
+    import { useRouter } from 'vue-router';
+
     export default {
+        
         setup() {
             const form = reactive({
                 email: '',
                 password:  '',
             }),
             myForm = ref(null);
+            
+            const router = useRouter();
 
             let valid           =   false,
                 show            =   false,
@@ -102,9 +106,11 @@
                         let data =  response.data.data;
                         console.log(data);
                         localStorage.setItem('jwt', data.token);
+                        router.push('/dashboard')
                         // this.submitted = true;
                     })
                     .catch(e => {
+                        localStorage.removeItem('jwt');
                         console.log(e);
                     });
                 });
