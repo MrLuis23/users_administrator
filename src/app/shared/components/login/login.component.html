@@ -1,0 +1,13 @@
+<ng-container>
+    <form [formGroup]="loginForm" class="flex flex-col" (ngSubmit)="onSubmit()">
+        <mat-form-field class="example-full-width">
+            <mat-label>Usuario</mat-label>
+            <input matInput formControlName="username">
+        </mat-form-field>
+        <mat-form-field class="example-full-width">
+            <mat-label>Password</mat-label>
+            <input type="password" matInput formControlName="password">
+        </mat-form-field>
+        <button mat-flat-button>Iniciar sesión</button>
+    </form>
+</ng-container>
